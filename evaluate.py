@@ -9,7 +9,7 @@ from torch.autograd import Variable
 from utils import set_device, set_network, load_dataset
 
 
-def pgd_evaluate(model, data_loader, epsilon, num_steps, step_size):
+def pgd_evaluate(model, data_loader, epsilon, num_steps, step_size, device):
     model.eval()
     accurate = 0
     stable = 0
@@ -23,9 +23,9 @@ def pgd_evaluate(model, data_loader, epsilon, num_steps, step_size):
         x_plabel = torch.max(x_logit, dim=1)[1]
         x_adv_logit = model(x_adv)
         x_adv_plabel = torch.max(x_adv_logit, dim=1)[1]
-        accurate += (x_plabel == y).float().sum()
-        stable += (x_adv_plabel == x_plabel).float().sum()
-        robust += (x_adv_plabel == y).float().sum()
+        accurate += (x_plabel == y).float().sum().item()
+        stable += (x_adv_plabel == x_plabel).float().sum().item()
+        robust += (x_adv_plabel == y).float().sum().item()
         total += len(y)
 
     return accurate / total, stable / total, robust / total

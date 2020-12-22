@@ -121,10 +121,10 @@ def main(args):
 
             optimizer.zero_grad()
 
-            loss, ret = loss_func(model, args, x, y)
+            loss, ret = loss_func(model, x, y)
 
-            accurate_losses.append(ret["l_a"])
-            stable_losses.append(ret["l_s"])
+            accurate_losses.append(ret["l_a"].item())
+            stable_losses.append(ret["l_s"].item())
             losses.append(loss.item())
 
             total += len(y)
@@ -157,10 +157,10 @@ def main(args):
         rate_tr_rob = tr_rob / total
         rate_te_acc, rate_te_sta, rate_te_rob = pgd_evaluate(
             model, test_loader, args.test_epsilon,
-            args.test_num_steps, args.test_step_size,
+            args.test_num_steps, args.test_step_size, device
             )
         logger.info(
-            "Train A: {:.2f}%, S: {:.2f}%, R: {:.2f}%"
+            "Train A: {:.2f}%, S: {:.2f}%, R: {:.2f}%\t"
             "Test A: {:.2f}%, S: {:.2f}%, R: {:.2f}%".format(
                 100 * rate_tr_acc, 100 * rate_tr_sta, 100 * rate_tr_rob,
                 100 * rate_te_acc, 100 * rate_te_sta, 100 * rate_te_rob

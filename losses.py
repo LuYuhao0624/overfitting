@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from attacks import PGD
 
+
 class Loss:
     def __init__(self, args):
         self.args = args

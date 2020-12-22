@@ -87,7 +87,7 @@ def set_hyper(args):
         "test_epsilon", "test_num_steps", "test_step_size"
         ]
     if args.cifar:
-        default_values = [0.1, "resnet", 1e-4, 0.031, 10, 0.007, 0.031, 20,
+        default_values = [0.01, "resnet", 1e-4, 0.031, 10, 0.007, 0.031, 20,
                           0.003]
     elif args.mnist:
         default_values = [0.01, "nn", 0, 0.3, 40, 0.01, 0.3, 40, 0.01]
