@@ -102,7 +102,8 @@ def save_args(args, logger):
     result_name = os.path.join(args.result_folder, args.save_name + ".json")
 
     important_args = [
-        "mnist", "cifar", "net", "loss", "batch_size", "epochs", "beta",
+        "mnist", "cifar", "net", "loss",
+        "batch_size", "epochs", "beta", "gamma",
         # "alpha", "period", "max",
         "weight_decay", "lr", "r1", "r2", "r3", "momentum",
         "train_epsilon", "train_num_steps", "train_step_size",

@@ -7,13 +7,13 @@ class Loss:
     def __init__(self, args):
         self.args = args
 
-    def __call__(self, model, x, y, random=True):
+    def __call__(self, model, x, y, random=True, **kwargs):
         model.eval()
         target = self.preprocess(model, x, y)
         advs = self.generate_adv(model, x, y, target, random)
         model.train()
         params, metric_dict = self.postprocess(model, x, y, advs)
-        loss, loss_terms = self.compute_loss(model, params)
+        loss, loss_terms = self.compute_loss(model, params, kwargs)
         metric_dict.update(loss_terms)
         return loss, metric_dict
 
@@ -42,9 +42,18 @@ class Loss:
             "robust": robust
             }
 
-    def compute_loss(self, model, params):
+    def compute_loss(self, model, params, kwargs):
         raise NotImplementedError("This function should be invoked in "
                                   "sub-classes only.")
+
+
+class NoisyLoss(Loss):
+    def noisy_term(self, model, kwargs):
+        x2 = kwargs["x2"]
+        y2 = torch.randint_like(kwargs["y2"], 0, 10)
+        x2_adv = self.generate_adv(model, x2, y2, y2, True)
+        loss_noisy = F.cross_entropy(model(x2_adv), y2)
+        return loss_noisy
 
 
 class AccurateStableLoss(Loss):
@@ -54,7 +63,7 @@ class AccurateStableLoss(Loss):
         x_plabel = torch.max(x_logit, dim=1)[1]
         return x_plabel
 
-    def compute_loss(self, model, params):
+    def compute_loss(self, model, params, kwargs):
         x_logit, y, x_plabel, x_adv_logit = params
         loss_accurate = F.cross_entropy(x_logit, y)
         loss_stable = F.cross_entropy(x_adv_logit, x_plabel)
@@ -70,7 +79,7 @@ class RobustLoss(Loss):
         # get target for generating perturbation in loss function
         return y
 
-    def compute_loss(self, model, params):
+    def compute_loss(self, model, params, kwargs):
         x_logit, y, x_plabel, x_adv_logit = params
         loss_accurate = F.cross_entropy(x_logit, y)
         loss_stable = F.cross_entropy(x_adv_logit, x_plabel)
@@ -110,7 +119,7 @@ class MultiTaskLoss(Loss):
         x_adv[~gt] = x_sta[~gt]
         return x_adv
 
-    def compute_loss(self, model, params):
+    def compute_loss(self, model, params, kwargs):
         x_logit, y, x_plabel, x_adv_logit = params
         loss_accurate = F.cross_entropy(x_logit, y)
         loss_stable = F.cross_entropy(x_adv_logit, x_plabel)
@@ -126,6 +135,21 @@ class MultiTaskLoss(Loss):
         return loss_accurate + self.args.beta * loss_stable
 
 
+class NoisyRobustLoss(RobustLoss, NoisyLoss):
+    def compute_loss(self, model, params, kwargs):
+        loss, loss_terms = RobustLoss.compute_loss(self, model, params, kwargs)
+        loss_noisy = self.noisy_term(model, kwargs)
+        loss = loss + self.args.gamma * loss_noisy
+        return loss, loss_terms
+
+
+class NoisyAccurateStableLoss(AccurateStableLoss, NoisyLoss):
+    def compute_loss(self, model, params, kwargs):
+        loss, loss_terms = AccurateStableLoss.compute_loss(
+            self, model, params, kwargs)
+        loss_noisy = self.noisy_term(model, kwargs)
+        loss = loss + self.args.gamma * loss_noisy
+        return loss, loss_terms
 
 
 #
